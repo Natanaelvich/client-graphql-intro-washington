@@ -1,32 +1,53 @@
-import { gql } from "@apollo/client";
-import { useEffect, useState } from "react";
-import apolloClient from './config/apolloClient'
+import { gql, useMutation, useQuery } from "@apollo/client";
+import { useState } from "react";
+import { CREATE_CONTATOS } from "./graphql";
 
+const GET_USERS =  gql`
+query GetUser {
+  users{
+    login
+    token
+  }
+}
+`
 function App() {
-const [users, setUsers] = useState([])
+const {loading, data } = useQuery(GET_USERS)
+const [createContato] = useMutation(CREATE_CONTATOS)
 
-    useEffect(() => {
-        apolloClient
-  .query({
-    query: gql`
-      query GetUser {
-        users{
-          login
-        }
-      }
-    `
-  })
-  .then(result => {
-      setUsers(result.data.users)
-  })
-    }, [])
+const [name, setName] = useState('')
+const [email, setEmail] = useState('')
+
+function handleSubmit(e){
+    e.preventDefault()
+    createContato({
+        variables : {name,email},
+    })
+}
+
   return (
     <div className="App">
-      <ul>
-          {users.map(u =>(
-              <li>{u.login}</li>
-          ))}
+        <form onSubmit={handleSubmit}>
+            <label htmlFor="">Nome</label>
+            <input type="text" name='name' value={name} onChange={e => setName(e.target.value)} />
+            <label htmlFor="">Email</label>
+            <input type="text" name='email' value={email} onChange={e => setEmail(e.target.value)}/>
+
+            <button type='submit'>
+cadastrar
+            </button>
+        </form>
+        {loading ? (
+        <p>Carregando</p>
+        ) : (
+
+            <ul>
+          {data.users.map((u,index) =>(
+              <li key={index}>{u.login}
+              <button>Adicionar contato</button>
+              </li>
+              ))}
       </ul>
+              )}
     </div>
   );
 }
