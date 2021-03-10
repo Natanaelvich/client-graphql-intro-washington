@@ -1,53 +1,63 @@
-import { gql, useMutation, useQuery } from "@apollo/client";
+import { useMutation, useQuery } from "@apollo/client";
 import { useState } from "react";
-import { CREATE_CONTATOS } from "./graphql";
+import { ADD_CONTATOS, GET_CONTATOS } from "./graphql";
 
-const GET_USERS =  gql`
-query GetUser {
-  users{
-    login
-    token
-  }
-}
-`
 function App() {
-const {loading, data } = useQuery(GET_USERS)
-const [createContato] = useMutation(CREATE_CONTATOS)
+  const { loading, data } = useQuery(GET_CONTATOS);
+  const [createContato] = useMutation(ADD_CONTATOS, {
+    update(cache, { data }) {
+      const newContato = data?.createContato;
+      const cacheContatos = cache.readQuery({ query: GET_CONTATOS });
 
-const [name, setName] = useState('')
-const [email, setEmail] = useState('')
+      cache.writeQuery({
+        query: GET_CONTATOS,
+        data: {
+          contatos: [...cacheContatos.contatos, newContato],
+        },
+      });
+    },
+  });
 
-function handleSubmit(e){
-    e.preventDefault()
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+
+  console.log(data);
+
+  function handleSubmit(e) {
+    e.preventDefault();
     createContato({
-        variables : {name,email},
-    })
-}
+      variables: { nome: name, email, user_id: 52014318 },
+    });
+  }
 
   return (
     <div className="App">
-        <form onSubmit={handleSubmit}>
-            <label htmlFor="">Nome</label>
-            <input type="text" name='name' value={name} onChange={e => setName(e.target.value)} />
-            <label htmlFor="">Email</label>
-            <input type="text" name='email' value={email} onChange={e => setEmail(e.target.value)}/>
-
-            <button type='submit'>
-cadastrar
-            </button>
-        </form>
-        {loading ? (
+      <form onSubmit={handleSubmit}>
+        <label htmlFor="">Nome</label>
+        <input
+          type="text"
+          name="name"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+        />
+        <label htmlFor="">Email</label>
+        <input
+          type="text"
+          name="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+        />
+        <button type="submit">Cadastrar</button>
+      </form>
+      {loading ? (
         <p>Carregando</p>
-        ) : (
-
-            <ul>
-          {data.users.map((u,index) =>(
-              <li key={index}>{u.login}
-              <button>Adicionar contato</button>
-              </li>
-              ))}
-      </ul>
-              )}
+      ) : (
+        <ul>
+          {data.contatos.map((c, index) => (
+            <li key={index}>{c.email}</li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }
